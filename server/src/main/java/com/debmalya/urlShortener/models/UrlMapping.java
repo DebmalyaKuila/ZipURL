@@ -1,6 +1,6 @@
 package com.debmalya.urlShortener.models;
 
-import java.time.LocalDate;
+
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Entity;

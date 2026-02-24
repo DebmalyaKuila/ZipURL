@@ -1,6 +1,7 @@
 package com.debmalya.urlShortener.security.jwt;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import com.debmalya.urlShortener.service.UserDetailsImpl;
 
@@ -17,6 +18,7 @@ import javax.crypto.SecretKey;
 import java.util.stream.Collectors;
 import java.util.Date;
 
+@Component
 public class JwtUtils {
 
     @Value("${jwt.secret}")

@@ -8,6 +8,7 @@ import com.debmalya.urlShortener.models.User;
 import com.debmalya.urlShortener.repository.UserRepository;
 import com.debmalya.urlShortener.security.jwt.JwtAuthResponponse;
 import com.debmalya.urlShortener.security.jwt.JwtUtils;
+import com.debmalya.urlShortener.CustomExceptions.UsernameAlreadyExistsException;
 import com.debmalya.urlShortener.dtos.LoginRequest;
 
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,6 +25,9 @@ public class UserService {
     private JwtUtils jwtUtils;
 
     public User registerUser(User user) {
+        if (userRepository.existsByUsername(user.getUsername())) {
+            throw new UsernameAlreadyExistsException(user.getUsername());
+        }
         String encodedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(encodedPassword);
         return userRepository.save(user);

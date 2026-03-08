@@ -3,12 +3,17 @@ package com.debmalya.urlShortener.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import java.util.Map;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.LocalDate;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.InvalidUrlException;
+import com.debmalya.urlShortener.CustomExceptions.ShortUrlGenerationException;
 
 import com.debmalya.urlShortener.dtos.UrlMappingDTO;
 import com.debmalya.urlShortener.models.UrlMapping;
@@ -27,9 +32,10 @@ public class UrlMappingService {
     private ClickEventRepository clickEventRepository;
 
     public UrlMappingDTO createShortUrl(String originalUrl, User user) {
-        String shortUrl = generateShortUrl(originalUrl);
+        String normalizedUrl = normalizeUrl(originalUrl);
+        String shortUrl = generateShortUrl(normalizedUrl);
         UrlMapping urlMapping = new UrlMapping();
-        urlMapping.setOriginalUrl(originalUrl);
+        urlMapping.setOriginalUrl(normalizedUrl);
         urlMapping.setShortUrl(shortUrl);
         urlMapping.setCreatedAt(LocalDateTime.now());
         urlMapping.setUser(user);
@@ -37,19 +43,47 @@ public class UrlMappingService {
         return convertToDTO(savedMapping);
     }
 
+    private static final String characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    final int CODE_LENGTH = 7;
+    final int MAX_ATTEMPTS = 5;
     public String generateShortUrl(String originalUrl) {
-        final int CODE_LENGTH = 7;
-        String characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        Random random = new Random();
-        while (true) {
-        StringBuilder shortCode = new StringBuilder();
-        for (int i = 0; i < CODE_LENGTH; i++) {
-        shortCode.append(characters.charAt(random.nextInt(characters.length())));
+        for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+            StringBuilder shortCode = new StringBuilder();
+            for (int i = 0; i < CODE_LENGTH; i++) {
+                int index = ThreadLocalRandom.current().nextInt(characters.length());
+                shortCode.append(characters.charAt(index));
+            }
+            String code = shortCode.toString();
+            if (!urlMappingRepository.existsByShortUrl(code)) return code;
         }
-        
-        if (!urlMappingRepository.existsByShortUrl(shortCode.toString())) {
-        return shortCode.toString();
-        }
+
+        throw new ShortUrlGenerationException("Failed to generate unique short URL");
+    }
+
+    private String normalizeUrl(String url) {
+        if (url == null || url.isBlank()) throw new InvalidUrlException("URL cannot be empty");
+        url = url.trim();
+        if (!url.startsWith("http://") && !url.startsWith("https://")) url = "https://" + url;
+        try {
+            URI uri = new URI(url);
+            String scheme = uri.getScheme();
+            if (scheme == null ||
+                (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
+                throw new InvalidUrlException("Only HTTP/HTTPS URLs allowed");
+            }
+
+            String host = uri.getHost();
+            if (host == null || host.isBlank()) throw new InvalidUrlException("Invalid URL host");
+            
+            host = host.toLowerCase();
+
+            if (!host.contains(".")) {
+                throw new InvalidUrlException("Invalid domain");
+            }
+
+            return uri.toString();
+        } catch (URISyntaxException e) {
+            throw new InvalidUrlException("Invalid URL format");
         }
     }
 

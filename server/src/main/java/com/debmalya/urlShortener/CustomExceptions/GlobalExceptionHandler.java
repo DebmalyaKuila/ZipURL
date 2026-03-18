@@ -2,7 +2,6 @@ package com.debmalya.urlShortener.CustomExceptions;
 
 import com.debmalya.urlShortener.dtos.ErrorResponseDTO;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;

@@ -13,6 +13,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import com.debmalya.urlShortener.filters.RateLimitFilter;
 import com.debmalya.urlShortener.security.jwt.JwtAuthFilter;
 import com.debmalya.urlShortener.service.UserDetailsServiceImpl;
 
@@ -24,7 +25,8 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class WebSecurityConfig {
     
-    private UserDetailsServiceImpl userDetailsService;
+    private final UserDetailsServiceImpl userDetailsService;
+    private final RateLimitFilter rateLimitFilter;
 
     @Bean
     public JwtAuthFilter jwtAuthFilter() {
@@ -57,9 +59,9 @@ public class WebSecurityConfig {
                     .requestMatchers("/{shortUrl}").permitAll()
                     .anyRequest().authenticated()
             );
-
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(rateLimitFilter, JwtAuthFilter.class);
 
         return http.build();
     }

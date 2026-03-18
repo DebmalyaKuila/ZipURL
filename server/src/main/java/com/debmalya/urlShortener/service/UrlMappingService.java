@@ -2,7 +2,6 @@ package com.debmalya.urlShortener.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
